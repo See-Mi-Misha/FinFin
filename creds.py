@@ -4,11 +4,12 @@ import time
 from datetime import datetime
 import requests
 
-HOME_DIR = '/home/student/pract'
+
+HOME_DIR = '/Users/mihailloginov/PycharmProjects/FInFon'
 DB_FILE = f'{HOME_DIR}/messages.db'
-IAM_TOKEN_PATH = f'{HOME_DIR}/creds/iam_token.txt'
-FOLDER_ID_PATH = f'{HOME_DIR}/creds/folder_id.txt'
-BOT_TOKEN_PATH = f'{HOME_DIR}/creds/bot_token.txt'
+IAM_TOKEN_PATH = '/Users/mihailloginov/PycharmProjects/FInFon/credsI/iam.txt'
+FOLDER_ID_PATH = "/Users/mihailloginov/PycharmProjects/FInFon/credsI/folder.txt"
+BOT_TOKEN_PATH = '/Users/mihailloginov/PycharmProjects/FInFon/credsI/token.txt'
 
 
 def create_new_token():

@@ -1,16 +1,16 @@
 import telebot
-from info import start_info, official
+from info import start_info, official, token
 from keyboards import start_keyboard, menu_keyboard
 from creds import get_bot_token, get_creds
 import requests
 import logging
 import sqlite3
 
-#iam_token, folder_id = get_creds()
+iam_token, folder_id = get_creds()
 #не работает
 
-iam_token = "t1.9euelZrPjpOTzJyNl46Tj5bNyMrJie3rnpWakpqbiZeUmZScz5GSlsaNxsvl8_cnEGdN-e9MPmBo_t3z92c-ZE3570w-YGj-zef1656VmpfPmJSMioyKypKZkMeckpeR7_zF656VmpfPmJSMioyKypKZkMeckpeRveuelZqNnpHGyo-PjIzGy4rNmpjGm7XehpzRnJCSj4qLmtGLmdKckJKPioua0pKai56bnoue0oye.fi4DJ77L4eaNieu7rHb1lP3iIH7MAJJAAWiJ5SENu5Rqa1-WXH8Wm87jw3t-sA-K6Nap1m3w00RIgqQke-NVBQ"
-folder_id = 'b1g5aqf2rl8hk0garevb'
+#iam_token = "t1.9euelZqJm8-dxpGXks-ZjpyOm57GyO3rnpWakpqbiZeUmZScz5GSlsaNxsvl8_d-UUhN-e82UAdb_t3z9z4ARk357zZQB1v-zef1656Vms_NzJ3OmsaLnZuNi8bHjMaT7_zF656Vms_NzJ3OmsaLnZuNi8bHjMaTveuelZqMy82XjJnKjpqOis3PkYmJmrXehpzRnJCSj4qLmtGLmdKckJKPioua0pKai56bnoue0oye.kdvgX-ukJjOc96A8bOqEKMBkb9JbPuXohWWBNE5VKI6y30ZQahhZJMs55rp9BRCL1O5mSIWMq7D_hHomJZBqBQ"
+# folder_id = 'b1g5aqf2rl8hk0garevb'
 
 
 # Настройка логирования
@@ -20,24 +20,9 @@ logging.basicConfig(
     filemode="w",
 )
 
-token = "6829420719:AAE-TzSX233dOWezfLEsUZe94c2Uwve638g"
 bot = telebot.TeleBot(token)
 print(bot.get_me())
 
-
-con = sqlite3.connect('datbasaaa.bd')
-cur = con.cursor()
-quer = f'''
-CREATE TABLE IF NOT EXISTS AIN(
-    user_id INTEGER PRIMARY KEY,
-    tts_s INTEGER, 
-    stt_s INTIGER, 
-    stt_b INTEGER, 
-    sessions INTEGER
-);
-'''
-cur.execute(quer)
-con.close()
 
 
 @bot.message_handler(commands=['start'])
@@ -65,9 +50,9 @@ def answer(message):
             logging.info("Пользователь отправил текст")
             global text
             text = message.text
-            bot.register_next_step_handler(message, answer1)
             global audi
             audi = False
+            answer1(message)
 
         elif message.voice:
             logging.info("Пользоватеь отправил аудио")
@@ -86,51 +71,54 @@ def answer(message):
                 bot.register_next_step_handler(message, handle_start)
 
             elif stt_blocks <= 2:
-                bot.register_next_step_handler(message, speech_to_text)
+                logging.info("101")
+                speech_to_text(message)
 
 
 def speech_to_text(message):
 
-    logging.info('2')
+    if audi == True:
 
-    params = "&".join([
-        "topic=general",
-        f"folderId={folder_id}",
-        f"lang=ru-RU"
-    ])
+        logging.info('2')
 
-    # Аутентификация через IAM-токен
-    headers = {
-        'Authorization': f'Bearer {iam_token}',
-    }
+        params = "&".join([
+            "topic=general",
+            f"folderId={folder_id}",
+            f"lang=ru-RU"
+        ])
 
-    # Выполняем запрос
-    response = requests.post(
-        f"https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?{params}",
-        headers=headers,
-        data=file
-    )
-    logging.info('3')
+        # Аутентификация через IAM-токен
+        headers = {
+            'Authorization': f'Bearer {iam_token}',
+        }
 
-    # Читаем json в словарь
-    decoded_data = response.json()
-    # Проверяем, не произошла ли ошибка при запросе
-    if decoded_data.get("error_code") is None:
-        logging.info("Раскод")
-        global text
-        text = decoded_data.get("result")
-        stt_s = len(text)
-        tts_s = len(text)
-        con = sqlite3.connect('datbasaaa.bd')
-        cur = con.cursor()
-        quer = f'''
-            INSERT OR REPLACE INTO AIN (user_id, tts_s, stt_s, stt_b, sessions)
-            VALUES ("{message.from_user.id}", "{tts_s}", "{stt_s}", "{stt_blocks}", "?");
-        '''
-        cur.execute(quer)
-        con.commit()
-        con.close()
-        bot.register_next_step_handler(message, answer1)
+        # Выполняем запрос
+        response = requests.post(
+            f"https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?{params}",
+            headers=headers,
+            data=file
+        )
+        logging.info('3')
+
+        # Читаем json в словарь
+        decoded_data = response.json()
+        # Проверяем, не произошла ли ошибка при запросе
+        if decoded_data.get("error_code") is None:
+            logging.info("Раскод")
+            global text
+            text = decoded_data.get("result")
+            stt_s = len(text)
+            tts_s = len(text)
+            con = sqlite3.connect('datbasaaa.bd')
+            cur = con.cursor()
+            quer = f'''
+                INSERT OR REPLACE INTO AIN (user_id, tts_s, stt_s, stt_b, sessions)
+                VALUES ("{message.from_user.id}", "{tts_s}", "{stt_s}", "{stt_blocks}", "?");
+            '''
+            cur.execute(quer)
+            con.commit()
+            con.close()
+            answer1(message)
     else:
         # Если возникла ошибка, выводим сообщение об ошибке
         logging.error('Ошибка кода')
@@ -182,9 +170,11 @@ def answer1(message):
         if audi == False:
             bot.send_message(message.chat.id, result)
             logging.info("Ответ был успешно отправлен")
+
         elif audi == True:
-            bot.register_next_step_handler(message, text_to_speech)
             logging.info("Форматирую аудио")
+            text_to_speech(message)
+
     else:
         logging.error("Не удалось сгенерировать ответ")
         bot.reply_to(message, "Извини, я не смог сгенерировать для тебя ответ")
